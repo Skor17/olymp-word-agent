@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from docx import Document
 
@@ -51,6 +52,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-o", "--output", help="Path for the edited .docx (default: <input>_edited.docx)")
     parser.add_argument("instruction", nargs="?", help="Natural-language editing instruction")
     parser.add_argument(
+        "--instruction-file",
+        default=None,
+        help="Read the instruction from a UTF-8 file instead of the command line (avoids shell quoting issues).",
+    )
+    parser.add_argument(
         "--planner",
         choices=["mock", "llm"],
         default="mock",
@@ -70,14 +76,23 @@ def main(argv: list[str] | None = None) -> int:
         print(document_summary(doc))
         return 0
 
-    if not args.instruction:
-        parser.error("an editing instruction is required (or use --summary)")
+    instruction = args.instruction
+    if args.instruction_file:
+        try:
+            instruction = Path(args.instruction_file).read_text(encoding="utf-8").strip()
+        except OSError as e:
+            sys.exit(f"error: cannot read instruction file: {e}")
+    if not instruction:
+        parser.error(
+            "an editing instruction is required (as an argument or via --instruction-file), "
+            "or use --summary"
+        )
 
     output = args.output or args.input.rsplit(".", 1)[0] + "_edited.docx"
     planner = _build_planner(args)
 
     report = run_agent(
-        instruction=args.instruction,
+        instruction=instruction,
         input_path=args.input,
         output_path=output,
         planner=planner,
