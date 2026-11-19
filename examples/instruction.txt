@@ -1,0 +1,1 @@
+Replace "Acme Corporation" with "Globex Corporation", change "Draft" to "Final", and add a row to table 0: "2025-12-18", "Dr. Smith", "Follow-up", "Annual check"
